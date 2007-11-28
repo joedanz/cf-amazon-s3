@@ -1,5 +1,9 @@
 <cfset accessKeyId = "*** YOUR_ACCESS_KEY_ID ***"> 
-<cfset secretAccessKey = "*** YOUR_SECRET_ACCESS_KEY ***"> 
+<cfset secretAccessKey = "*** YOUR_SECRET_ACCESS_KEY ***">
+
+<cfif find('***',accessKeyId) or find('***',secretAccessKey)>
+	<cfabort showerror="You must edit the code to enter YOUR accessKeyId and secretAccessKey at the top.">
+</cfif>
 
 <cfset s3 = createObject("component","s3").init(accessKeyId,secretAccessKey)>
 
@@ -9,7 +13,7 @@
 	<cfif compare(url.b,'')>
 		<cfset form.bucketName = url.b & "/" & form.bucketName>
 	</cfif>
-	<cfset s3.putBucket(form.bucketName)>
+	<cfset s3.putBucket(form.bucketName,form.acl,form.storage)>
 <cfelseif isDefined("form.uploadFile")>
 	<cffile action="upload" filefield="objectName" destination= "#ExpandPath('.')#" nameconflict="makeunique" mode="666">
 	<cfset s3.putObject(url.b,file.serverFile,file.contentType)>
@@ -50,6 +54,16 @@
 	</table><br />
 	<form action="#cgi.script_name#?b=#url.b#" method="post">
 	<input type="text" name="bucketName" size="30" />
+	<select name="acl">
+		<option value="private">Private</option>
+		<option value="public-read">Public-Read</option>
+		<option value="public-read-write">Public-Read-Write</option>
+		<option value="authenticated-read">Authenticated-Read</option>
+	</select>
+	<select name="storage">
+		<option value="US">United States</option>
+		<option value="EU">Europa</option>
+	</select>
 	<input type="submit" name="createBucket" value="Create Bucket" />
 	</form>
 	</cfoutput>

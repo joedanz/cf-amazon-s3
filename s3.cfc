@@ -1,4 +1,4 @@
-<cfcomponent name="s3" displayname="Amazon S3 REST Wrapper v1.2">
+<cfcomponent name="s3" displayname="Amazon S3 REST Wrapper v1.3">
 
 <!---
 Amazon S3 REST Wrapper
@@ -7,7 +7,7 @@ Written by Joe Danziger (joe@ajaxcf.com) with much help from
 dorioo on the Amazon S3 Forums.  See the readme for more
 details on usage and methods.
 
-Version 1.2 - Released: October 4, 2006
+Version 1.3 - Released: November 28, 2007
 --->
 
 	<cfset variables.accessKeyId = "">
@@ -20,7 +20,7 @@ Version 1.2 - Released: October 4, 2006
 		
 		<cfset variables.accessKeyId = arguments.accessKeyId>
 		<cfset variables.secretAccessKey = arguments.secretAccessKey>
-		
+	
 		<cfreturn this>
 	</cffunction>
 	
@@ -47,7 +47,6 @@ Version 1.2 - Released: October 4, 2006
 	
 		<cfreturn outStream.toByteArray()>
 	</cffunction>
-
 
 	<cffunction name="getBuckets" access="public" output="false" returntype="array" 
 				description="List all available buckets.">
@@ -94,16 +93,17 @@ Version 1.2 - Released: October 4, 2006
 		<cfreturn allBuckets>		
 	</cffunction>
 	
-	
 	<cffunction name="putBucket" access="public" output="false" returntype="boolean" 
 				description="Creates a bucket.">
-		<cfargument name="bucketName" type="string" required="yes">
+		<cfargument name="bucketName" type="string" required="true">
+		<cfargument name="acl" type="string" required="false" default="public-read">
+		<cfargument name="storageLocation" type="string" required="false" default="">
 		
 		<cfset var signature = "">
 		<cfset var dateTimeString = GetHTTPTimeString(Now())>
 
 		<!--- Create a canonical string to send based on operation requested ---> 
-		<cfset var cs = "PUT\n\ntext/html\n#dateTimeString#\n/#arguments.bucketName#"> 
+		<cfset var cs = "PUT\n\ntext/html\n#dateTimeString#\nx-amz-acl:#arguments.acl#\n/#arguments.bucketName#">
 
 		<!--- Replace "\n" with "chr(10) to get a correct digest --->
 		<cfset var fixedData = replace(cs,"\n","#chr(10)#","all")> 
@@ -114,16 +114,25 @@ Version 1.2 - Released: October 4, 2006
 		<!--- fix the returned data to be a proper signature --->
 		<cfset signature = ToBase64(Hex2Bin("#digest#"))>
 
+		<cfif arguments.storageLocation eq "EU">
+			<cfsavecontent variable="strXML">
+				<CreateBucketConfiguration><LocationConstraint>EU</LocationConstraint></CreateBucketConfiguration>
+			</cfsavecontent>
+		<cfelse>
+			<cfset strXML = "">
+		</cfif>
+
 		<!--- put the bucket via REST --->
 		<cfhttp method="PUT" url="http://s3.amazonaws.com/#arguments.bucketName#" charset="utf-8">
 			<cfhttpparam type="header" name="Content-Type" value="text/html">
 			<cfhttpparam type="header" name="Date" value="#dateTimeString#">
+			<cfhttpparam type="header" name="x-amz-acl" value="#arguments.acl#">
 			<cfhttpparam type="header" name="Authorization" value="AWS #variables.accessKeyId#:#signature#">
+			<cfhttpparam type="body" value="#trim(variables.strXML)#">
 		</cfhttp>
 		
 		<cfreturn true>
 	</cffunction>
-	
 	
 	<cffunction name="getBucket" access="public" output="false" returntype="array" 
 				description="Creates a bucket.">
@@ -184,7 +193,6 @@ Version 1.2 - Released: October 4, 2006
 		<cfreturn allContents>
 	</cffunction>
 	
-	
 	<cffunction name="deleteBucket" access="public" output="false" returntype="boolean" 
 				description="Deletes a bucket.">
 		<cfargument name="bucketName" type="string" required="yes">	
@@ -211,8 +219,7 @@ Version 1.2 - Released: October 4, 2006
 		</cfhttp>
 		
 		<cfreturn true>
-	</cffunction>	
-	
+	</cffunction>
 	
 	<cffunction name="putObject" access="public" output="false" returntype="boolean" 
 				description="Puts an object into a bucket.">
@@ -250,8 +257,7 @@ Version 1.2 - Released: October 4, 2006
 		</cfhttp> 		
 		
 		<cfreturn true>
-	</cffunction>	
-		
+	</cffunction>
 
 	<cffunction name="getObject" access="public" output="false" returntype="string" 
 				description="Returns a link to an object.">
@@ -279,8 +285,7 @@ Version 1.2 - Released: October 4, 2006
 		<cfset timedAmazonLink = "http://s3.amazonaws.com/#arguments.bucketName#/#arguments.fileKey#?AWSAccessKeyId=#variables.accessKeyId#&Expires=#epochTime#&Signature=#signature#">
 
 		<cfreturn timedAmazonLink>
-	</cffunction>	
-		
+	</cffunction>
 
 	<cffunction name="deleteObject" access="public" output="false" returntype="boolean" 
 				description="Deletes an object.">
@@ -300,7 +305,8 @@ Version 1.2 - Released: October 4, 2006
 		<cf_hmac hash_function="sha1" data="#fixedData#" key="#variables.secretAccessKey#">
 
 		<!--- fix the returned data to be a proper signature --->
-		<cfset signature = ToBase64(binaryDecode(digest,"hex"))> 
+		
+		<cfset signature = ToBase64(Hex2Bin("#digest#"))>
 
 		<!--- delete the object via REST --->
 		<cfhttp method="DELETE" url="http://s3.amazonaws.com/#arguments.bucketName#/#arguments.fileKey#">
