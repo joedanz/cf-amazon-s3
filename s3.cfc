@@ -6,6 +6,8 @@ Amazon S3 REST Wrapper
 Written by Joe Danziger (joe@ajaxcf.com) with much help from
 dorioo on the Amazon S3 Forums.  See the readme for more
 details on usage and methods.
+Thanks to Steve Hicks for the bucket ACL updates.
+Thanks to for the EU storage location updates.
 
 Version 1.3 - Released: November 28, 2007
 --->

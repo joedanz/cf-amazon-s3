@@ -55,8 +55,8 @@ Release History
 Thanks
 ------
 Special thanks to dorioo on the Amazon S3 Forums for your help and guidance.
-Thanks to Steve Hicks for the ACL updates (www.stevehicksonline.com).
-Thanks to for the EU storage updates (www.mximize.com).
+Thanks to Steve Hicks for the bucket ACL updates (www.stevehicksonline.com).
+Thanks to for the EU storage location updates (www.mximize.com).
 
 
 Future Plans
