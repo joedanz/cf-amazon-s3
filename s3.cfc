@@ -9,7 +9,7 @@ details on usage and methods.
 Thanks to Steve Hicks for the bucket ACL updates.
 Thanks to Carlos Gallupa for the EU storage location updates.
 
-Version 1.4 - Released: February 13, 2008
+Version 1.4 - Released: February 12, 2008
 --->
 
 	<cfset variables.accessKeyId = "">

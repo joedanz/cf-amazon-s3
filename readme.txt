@@ -1,7 +1,7 @@
 README
 Amazon S3 REST Wrapper - Version 1.4
 Joe Danziger (joe@ajaxcf.com)
-Released: February 13, 2008
+Released: February 12, 2008
 
 
 Install
@@ -44,7 +44,7 @@ Release History
  09/27/06 - v1.1 - <cf_hmac> custom tag included in distribution.
  10/04/06 - v1.2 - other required <cf_hmac> scripts now included.
  11/28/07 - v1.3 - integrated ACL & EU storage, better CF6 compatibility
- 02/13/08 - v1.4 - now using Java's included HMAC_SHA1 function.
+ 02/12/08 - v1.4 - now using Java's included HMAC_SHA1 function.
 
 
 Thanks
