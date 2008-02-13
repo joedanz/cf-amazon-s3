@@ -1,4 +1,4 @@
-<cfcomponent name="s3" displayname="Amazon S3 REST Wrapper v1.3">
+<cfcomponent name="s3" displayname="Amazon S3 REST Wrapper v1.4">
 
 <!---
 Amazon S3 REST Wrapper
@@ -7,9 +7,9 @@ Written by Joe Danziger (joe@ajaxcf.com) with much help from
 dorioo on the Amazon S3 Forums.  See the readme for more
 details on usage and methods.
 Thanks to Steve Hicks for the bucket ACL updates.
-Thanks to for the EU storage location updates.
+Thanks to Carlos Gallupa for the EU storage location updates.
 
-Version 1.3 - Released: November 28, 2007
+Version 1.4 - Released: February 13, 2008
 --->
 
 	<cfset variables.accessKeyId = "">
@@ -26,34 +26,39 @@ Version 1.3 - Released: November 28, 2007
 		<cfreturn this>
 	</cffunction>
 	
-	<cffunction name="Hex2Bin" returntype="any" hint="Converts a Hex string to binary">
-		<cfargument name="inputString" type="string" required="true" hint="The hexadecimal string to be written.">
+	<cffunction name="HMAC_SHA1" returntype="binary" access="private" output="false" hint="NSA SHA-1 Algorithm">
+	   <cfargument name="signKey" type="string" required="true" />
+	   <cfargument name="signMessage" type="string" required="true" />
 	
-		<cfset var outStream = CreateObject("java", "java.io.ByteArrayOutputStream").init()>
-		<cfset var inputLength = Len(arguments.inputString)>
-		<cfset var outputString = "">
-		<cfset var i = 0>
-		<cfset var ch = "">
+	   <cfset var jMsg = JavaCast("string",arguments.signMessage).getBytes("iso-8859-1") />
+	   <cfset var jKey = JavaCast("string",arguments.signKey).getBytes("iso-8859-1") />
+	   <cfset var key = createObject("java","javax.crypto.spec.SecretKeySpec") />
+	   <cfset var mac = createObject("java","javax.crypto.Mac") />
 	
-		<cfif inputLength mod 2 neq 0>
-			<cfset arguments.inputString = "0" & inputString>
-		</cfif>
+	   <cfset key = key.init(jKey,"HmacSHA1") />
+	   <cfset mac = mac.getInstance(key.getAlgorithm()) />
+	   <cfset mac.init(key) />
+	   <cfset mac.update(jMsg) />
 	
-		<cfloop from="1" to="#inputLength#" index="i" step="2">
-			<cfset ch = Mid(inputString, i, 2)>
-			<cfset outStream.write(javacast("int", InputBaseN(ch, 16)))>
-		</cfloop>
-	
-		<cfset outStream.flush()>
-		<cfset outStream.close()>
-	
-		<cfreturn outStream.toByteArray()>
+	   <cfreturn mac.doFinal() />
+	</cffunction>
+
+	<cffunction name="createSignature" returntype="string" access="public" output="false">
+	   <cfargument name="stringIn" type="string" required="true" />
+		
+		<!--- Replace "\n" with "chr(10) to get a correct digest --->
+		<cfset var fixedData = replace(arguments.stringIn,"\n","#chr(10)#","all")>
+		<!--- Calculate the hash of the information --->
+		<cfset var digest = HMAC_SHA1(variables.secretAccessKey,fixedData)>
+		<!--- fix the returned data to be a proper signature --->
+		<cfset var signature = ToBase64("#digest#")>
+		
+		<cfreturn signature>
 	</cffunction>
 
 	<cffunction name="getBuckets" access="public" output="false" returntype="array" 
 				description="List all available buckets.">
 		
-		<cfset var signature = "">
 		<cfset var data = "">
 		<cfset var bucket = "">
 		<cfset var buckets = "">
@@ -64,14 +69,8 @@ Version 1.3 - Released: November 28, 2007
 		<!--- Create a canonical string to send --->
 		<cfset var cs = "GET\n\n\n#dateTimeString#\n/">
 		
-		<!--- Replace "\n" with "chr(10) to get a correct digest --->
-		<cfset var fixedData = replace(cs,"\n","#chr(10)#","all")>
-
-		<!--- Calculate the hash of the information --->
-		<cf_hmac hash_function="sha1" data="#fixedData#" key="#variables.secretAccessKey#">
-		
-		<!--- fix the returned data to be a proper signature --->
-		<cfset signature = ToBase64(Hex2Bin("#digest#"))>
+		<!--- Create a proper signature --->
+		<cfset var signature = createSignature(cs)>
 		
 		<!--- get all buckets via REST --->
 		<cfhttp method="GET" url="http://s3.amazonaws.com">
@@ -101,20 +100,13 @@ Version 1.3 - Released: November 28, 2007
 		<cfargument name="acl" type="string" required="false" default="public-read">
 		<cfargument name="storageLocation" type="string" required="false" default="">
 		
-		<cfset var signature = "">
 		<cfset var dateTimeString = GetHTTPTimeString(Now())>
 
 		<!--- Create a canonical string to send based on operation requested ---> 
 		<cfset var cs = "PUT\n\ntext/html\n#dateTimeString#\nx-amz-acl:#arguments.acl#\n/#arguments.bucketName#">
 
-		<!--- Replace "\n" with "chr(10) to get a correct digest --->
-		<cfset var fixedData = replace(cs,"\n","#chr(10)#","all")> 
-
-		<!--- Calculate the hash of the information ---> 
-		<cf_hmac hash_function="sha1" data="#fixedData#" key="#variables.secretAccessKey#">
-
-		<!--- fix the returned data to be a proper signature --->
-		<cfset signature = ToBase64(Hex2Bin("#digest#"))>
+		<!--- Create a proper signature --->
+		<cfset var signature = createSignature(cs)>
 
 		<cfif arguments.storageLocation eq "EU">
 			<cfsavecontent variable="strXML">
@@ -143,7 +135,6 @@ Version 1.3 - Released: November 28, 2007
 		<cfargument name="marker" type="string" required="false" default="">
 		<cfargument name="maxKeys" type="string" required="false" default="">
 		
-		<cfset var signature = "">
 		<cfset var data = "">
 		<cfset var content = "">
 		<cfset var contents = "">
@@ -154,14 +145,8 @@ Version 1.3 - Released: November 28, 2007
 		<!--- Create a canonical string to send --->
 		<cfset var cs = "GET\n\n\n#dateTimeString#\n/#arguments.bucketName#">
 
-		<!--- Replace "\n" with "chr(10) to get a correct digest --->
-		<cfset var fixedData = replace(cs,"\n","#chr(10)#","all")>
-
-		<!--- Calculate the hash of the information --->
-		<cf_hmac hash_function="sha1" data="#fixedData#" key="#variables.secretAccessKey#">
-
-		<!--- fix the returned data to be a proper signature --->
-		<cfset signature = ToBase64(Hex2Bin("#digest#"))>
+		<!--- Create a proper signature --->
+		<cfset var signature = createSignature(cs)>
 
 		<!--- get the bucket via REST --->
 		<cfhttp method="GET" url="http://s3.amazonaws.com/#arguments.bucketName#">
@@ -199,20 +184,13 @@ Version 1.3 - Released: November 28, 2007
 				description="Deletes a bucket.">
 		<cfargument name="bucketName" type="string" required="yes">	
 		
-		<cfset var signature = "">
 		<cfset var dateTimeString = GetHTTPTimeString(Now())>
 		
 		<!--- Create a canonical string to send based on operation requested ---> 
 		<cfset var cs = "DELETE\n\n\n#dateTimeString#\n/#arguments.bucketName#"> 
 		
-		<!--- Replace "\n" with "chr(10) to get a correct digest --->
-		<cfset var fixedData = replace(cs,"\n","#chr(10)#","all")> 
-		
-		<!--- Calculate the hash of the information ---> 
-		<cf_hmac hash_function="sha1" data="#fixedData#" key="#variables.secretAccessKey#">
-		
-		<!--- fix the returned data to be a proper signature --->
-		<cfset signature = ToBase64(Hex2Bin("#digest#"))>
+		<!--- Create a proper signature --->
+		<cfset var signature = createSignature(cs)>
 		
 		<!--- delete the bucket via REST --->
 		<cfhttp method="DELETE" url="http://s3.amazonaws.com/#arguments.bucketName#" charset="utf-8">
@@ -230,21 +208,14 @@ Version 1.3 - Released: November 28, 2007
 		<cfargument name="contentType" type="string" required="yes">
 		<cfargument name="HTTPtimeout" type="numeric" required="no" default="300">
 		
-		<cfset var signature = "">
 		<cfset var binaryFileData = "">
 		<cfset var dateTimeString = GetHTTPTimeString(Now())>
 
 		<!--- Create a canonical string to send --->
 		<cfset var cs = "PUT\n\n#arguments.contentType#\n#dateTimeString#\nx-amz-acl:public-read\n/#arguments.bucketName#/#arguments.fileKey#">
 		
-		<!--- Replace "\n" with "chr(10) to get a correct digest --->
-		<cfset var fixedData = replace(cs,"\n","#chr(10)#","all")>
-		
-		<!--- Calculate the hash of the information --->
-		<cf_hmac hash_function="sha1" data="#fixedData#" key="#variables.secretAccessKey#">
-		
-		<!--- fix the returned data to be a proper signature --->
-		<cfset signature = ToBase64(Hex2Bin("#digest#"))>
+		<!--- Create a proper signature --->
+		<cfset var signature = createSignature(cs)>
 		
 		<!--- Read the image data into a variable --->
 		<cffile action="readBinary" file="#ExpandPath("./#arguments.fileKey#")#" variable="binaryFileData">
@@ -267,21 +238,14 @@ Version 1.3 - Released: November 28, 2007
 		<cfargument name="fileKey" type="string" required="yes">
 		<cfargument name="minutesValid" type="string" required="false" default="60">
 		
-		<cfset var signature = "">
 		<cfset var timedAmazonLink = "">
 		<cfset var epochTime = DateDiff("s", DateConvert("utc2Local", "January 1 1970 00:00"), now()) + (arguments.minutesValid * 60)>
 
 		<!--- Create a canonical string to send --->
 		<cfset var cs = "GET\n\n\n#epochTime#\n/#arguments.bucketName#/#arguments.fileKey#">
 
-		<!--- Replace "\n" with "chr(10) to get a correct digest --->
-		<cfset var fixedData = replace(cs,"\n","#chr(10)#","all")>
-
-		<!--- Calculate the hash of the information --->
-		<cf_hmac hash_function="sha1" data="#fixedData#" key="#variables.secretAccessKey#">
-
-		<!--- fix the returned data to be a proper signature --->
-		<cfset signature = URLEncodedFormat(ToBase64(Hex2Bin("#digest#")))>
+		<!--- Create a proper signature --->
+		<cfset var signature = createSignature(cs)>
 
 		<!--- Create the timed link for the image --->
 		<cfset timedAmazonLink = "http://s3.amazonaws.com/#arguments.bucketName#/#arguments.fileKey#?AWSAccessKeyId=#variables.accessKeyId#&Expires=#epochTime#&Signature=#signature#">
@@ -294,21 +258,13 @@ Version 1.3 - Released: November 28, 2007
 		<cfargument name="bucketName" type="string" required="yes">
 		<cfargument name="fileKey" type="string" required="yes">
 
-		<cfset var signature = "">
 		<cfset var dateTimeString = GetHTTPTimeString(Now())>
 
 		<!--- Create a canonical string to send based on operation requested ---> 
 		<cfset var cs = "DELETE\n\n\n#dateTimeString#\n/#arguments.bucketName#/#arguments.fileKey#"> 
 
-		<!--- Replace "\n" with "chr(10) to get a correct digest --->
-		<cfset var fixedData = replace(cs,"\n","#chr(10)#","all")> 
-
-		<!--- Calculate the hash of the information ---> 
-		<cf_hmac hash_function="sha1" data="#fixedData#" key="#variables.secretAccessKey#">
-
-		<!--- fix the returned data to be a proper signature --->
-		
-		<cfset signature = ToBase64(Hex2Bin("#digest#"))>
+		<!--- Create a proper signature --->
+		<cfset var signature = createSignature(cs)>
 
 		<!--- delete the object via REST --->
 		<cfhttp method="DELETE" url="http://s3.amazonaws.com/#arguments.bucketName#/#arguments.fileKey#">

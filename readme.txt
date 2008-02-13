@@ -1,13 +1,7 @@
 README
-Amazon S3 REST Wrapper - Version 1.3
+Amazon S3 REST Wrapper - Version 1.4
 Joe Danziger (joe@ajaxcf.com)
-Released: November 28, 2007
-
-
-Requirements
-------------
-ColdFusion 6+
-Ability to run Custom Tags.
+Released: February 13, 2008
 
 
 Install
@@ -50,15 +44,12 @@ Release History
  09/27/06 - v1.1 - <cf_hmac> custom tag included in distribution.
  10/04/06 - v1.2 - other required <cf_hmac> scripts now included.
  11/28/07 - v1.3 - integrated ACL & EU storage, better CF6 compatibility
+ 02/13/08 - v1.4 - now using Java's included HMAC_SHA1 function.
 
 
 Thanks
 ------
 Special thanks to dorioo on the Amazon S3 Forums for your help and guidance.
 Thanks to Steve Hicks for the bucket ACL updates (www.stevehicksonline.com).
-Thanks to for the EU storage location updates (www.mximize.com).
-
-
-Future Plans
-------------
- - Add support for access control lists
+Thanks to Carlos Gallupa for the EU storage location updates (www.mximize.com).
+Thanks to Dmitry Yakhnov for info on Java's HMAC SHA-1 function.
