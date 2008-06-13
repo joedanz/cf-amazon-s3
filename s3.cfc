@@ -248,7 +248,7 @@ Version 1.4 - Released: February 12, 2008
 		<cfset var signature = createSignature(cs)>
 
 		<!--- Create the timed link for the image --->
-		<cfset timedAmazonLink = "http://s3.amazonaws.com/#arguments.bucketName#/#arguments.fileKey#?AWSAccessKeyId=#variables.accessKeyId#&Expires=#epochTime#&Signature=#signature#">
+		<cfset timedAmazonLink = "http://s3.amazonaws.com/#arguments.bucketName#/#arguments.fileKey#?AWSAccessKeyId=#URLEncodedFormat(variables.accessKeyId)#&Expires=#epochTime#&Signature=#URLEncodedFormat(signature)#">
 
 		<cfreturn timedAmazonLink>
 	</cffunction>
