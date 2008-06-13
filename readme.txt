@@ -1,7 +1,7 @@
 README
-Amazon S3 REST Wrapper - Version 1.4
+Amazon S3 REST Wrapper - Version 1.5
 Joe Danziger (joe@ajaxcf.com)
-Released: February 12, 2008
+Released: June 13, 2008
 
 
 Install
@@ -45,6 +45,7 @@ Release History
  10/04/06 - v1.2 - other required <cf_hmac> scripts now included.
  11/28/07 - v1.3 - integrated ACL & EU storage, better CF6 compatibility
  02/12/08 - v1.4 - now using Java's included HMAC_SHA1 function.
+ 06/13/08 - v1.5 - fixed getObject link with URLEncodedFormat().
 
 
 Thanks
@@ -53,3 +54,4 @@ Special thanks to dorioo on the Amazon S3 Forums for your help and guidance.
 Thanks to Steve Hicks for the bucket ACL updates (www.stevehicksonline.com).
 Thanks to Carlos Gallupa for the EU storage location updates (www.mximize.com).
 Thanks to Dmitry Yakhnov for info on Java's HMAC SHA-1 function.
+Thanks to Joel Greutman for the fix on the getObject link.
