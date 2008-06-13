@@ -1,4 +1,4 @@
-<cfcomponent name="s3" displayname="Amazon S3 REST Wrapper v1.4">
+<cfcomponent name="s3" displayname="Amazon S3 REST Wrapper v1.5">
 
 <!---
 Amazon S3 REST Wrapper
@@ -8,8 +8,9 @@ dorioo on the Amazon S3 Forums.  See the readme for more
 details on usage and methods.
 Thanks to Steve Hicks for the bucket ACL updates.
 Thanks to Carlos Gallupa for the EU storage location updates.
+Thanks to Joel Greutman for the fix on the getObject link.
 
-Version 1.4 - Released: February 12, 2008
+Version 1.5 - Released: June 13, 2008
 --->
 
 	<cfset variables.accessKeyId = "">
