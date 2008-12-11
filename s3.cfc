@@ -1,4 +1,4 @@
-<cfcomponent name="s3" displayname="Amazon S3 REST Wrapper v1.5">
+<cfcomponent name="s3" displayname="Amazon S3 REST Wrapper v1.6">
 
 <!---
 Amazon S3 REST Wrapper
@@ -10,7 +10,7 @@ Thanks to Steve Hicks for the bucket ACL updates.
 Thanks to Carlos Gallupa for the EU storage location updates.
 Thanks to Joel Greutman for the fix on the getObject link.
 
-Version 1.5 - Released: June 13, 2008
+Version 1.6 - Released: December 11, 2008
 --->
 
 	<cfset variables.accessKeyId = "">
@@ -274,6 +274,53 @@ Version 1.5 - Released: June 13, 2008
 		</cfhttp>
 
 		<cfreturn true>
+	</cffunction>
+
+
+	<cffunction name="copyObject" access="public" output="false" returntype="boolean" 
+				description="Copies an object.">
+		<cfargument name="oldBucketName" type="string" required="yes">
+		<cfargument name="oldFileKey" type="string" required="yes">
+		<cfargument name="newBucketName" type="string" required="yes">
+		<cfargument name="newFileKey" type="string" required="yes">
+	
+		<cfset var dateTimeString = GetHTTPTimeString(Now())>
+
+		<!--- Create a canonical string to send based on operation requested ---> 
+		<cfset var cs = "PUT\n\napplication/octet-stream\n#dateTimeString#\nx-amz-copy-source:/#arguments.oldBucketName#/#arguments.oldFileKey#\n/#arguments.newBucketName#/#arguments.newFileKey#"> 
+
+		<!--- Create a proper signature --->
+		<cfset var signature = createSignature(cs)>	
+		
+		<cfif compare(arguments.oldBucketName,arguments.newBucketName) or compare(arguments.oldFileKey,arguments.newFileKey)>
+		
+			<!--- delete the object via REST --->
+			<cfhttp method="PUT" url="http://s3.amazonaws.com/#arguments.newBucketName#/#arguments.newFileKey#">
+				<cfhttpparam type="header" name="Date" value="#dateTimeString#">
+				<cfhttpparam type="header" name="x-amz-copy-source" value="/#arguments.oldBucketName#/#arguments.oldFileKey#">
+				<cfhttpparam type="header" name="Authorization" value="AWS #variables.accessKeyId#:#signature#">
+			</cfhttp>
+	
+			<cfreturn true>
+		<cfelse>
+			<cfreturn false>
+		</cfif>
+	</cffunction>
+
+	<cffunction name="renameObject" access="public" output="false" returntype="boolean" 
+				description="Renames an object by copying then deleting original.">
+		<cfargument name="oldBucketName" type="string" required="yes">
+		<cfargument name="oldFileKey" type="string" required="yes">
+		<cfargument name="newBucketName" type="string" required="yes">
+		<cfargument name="newFileKey" type="string" required="yes">
+		
+		<cfif compare(arguments.oldBucketName,arguments.newBucketName) or compare(arguments.oldFileKey,arguments.newFileKey)>
+			<cfset copyObject(arguments.oldBucketName,arguments.oldFileKey,arguments.newBucketName,arguments.newFileKey)>
+			<cfset deleteObject(arguments.oldBucketName,arguments.oldFileKey)>
+			<cfreturn true>
+		<cfelse>
+			<cfreturn false>
+		</cfif>
 	</cffunction>
 	
 </cfcomponent>

@@ -46,6 +46,7 @@ Release History
  11/28/07 - v1.3 - integrated ACL & EU storage, better CF6 compatibility
  02/12/08 - v1.4 - now using Java's included HMAC_SHA1 function.
  06/13/08 - v1.5 - fixed getObject link with URLEncodedFormat().
+ 12/11/08 - v1.6 - added copyObject and renameObject methods
 
 
 Thanks
