@@ -1,5 +1,5 @@
-<cfset accessKeyId = "1MEQ9VMKAJS5A8DSHER2"> 
-<cfset secretAccessKey = "dLOQwD0hmadIUOsaqYOD/j4iQg3V6xsEGSMVFfg4">
+<cfset accessKeyId = "*** YOUR_ACCESS_KEY_ID ***"> 
+<cfset secretAccessKey = "*** YOUR_SECRET_ACCESS_KEY ***">
 
 <cfif find('***',accessKeyId) or find('***',secretAccessKey)>
 	<cfabort showerror="You must edit the code to enter YOUR accessKeyId and secretAccessKey at the top.">
