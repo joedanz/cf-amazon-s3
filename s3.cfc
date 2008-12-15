@@ -1,4 +1,4 @@
-<cfcomponent name="s3" displayname="Amazon S3 REST Wrapper v1.6">
+<cfcomponent name="s3" displayname="Amazon S3 REST Wrapper v1.7">
 
 <!---
 Amazon S3 REST Wrapper
@@ -9,8 +9,9 @@ details on usage and methods.
 Thanks to Steve Hicks for the bucket ACL updates.
 Thanks to Carlos Gallupa for the EU storage location updates.
 Thanks to Joel Greutman for the fix on the getObject link.
+Thanks to Jerad Sloan for the Cache Control headers.
 
-Version 1.6 - Released: December 11, 2008
+Version 1.7 - Released: December 15, 2008
 --->
 
 	<cfset variables.accessKeyId = "">
@@ -208,6 +209,8 @@ Version 1.6 - Released: December 11, 2008
 		<cfargument name="fileKey" type="string" required="yes">
 		<cfargument name="contentType" type="string" required="yes">
 		<cfargument name="HTTPtimeout" type="numeric" required="no" default="300">
+		<cfargument name="cacheControl" type="boolean" required="false" default="true">
+		<cfargument name="cacheDays" type="numeric" required="false" default="30">
 		
 		<cfset var binaryFileData = "">
 		<cfset var dateTimeString = GetHTTPTimeString(Now())>
@@ -223,11 +226,15 @@ Version 1.6 - Released: December 11, 2008
 		
 		<!--- Send the file to amazon. The "X-amz-acl" controls the access properties of the file --->
 		<cfhttp method="PUT" url="http://s3.amazonaws.com/#arguments.bucketName#/#arguments.fileKey#" timeout="#arguments.HTTPtimeout#">
-			  <cfhttpparam type="header" name="Authorization" value="AWS #variables.accessKeyId#:#signature#">
-			  <cfhttpparam type="header" name="Content-Type" value="#arguments.contentType#">
-			  <cfhttpparam type="header" name="Date" value="#dateTimeString#">
-			  <cfhttpparam type="header" name="x-amz-acl" value="public-read">
-			  <cfhttpparam type="body" value="#binaryFileData#">
+			<cfhttpparam type="header" name="Authorization" value="AWS #variables.accessKeyId#:#signature#">
+			<cfhttpparam type="header" name="Content-Type" value="#arguments.contentType#">
+			<cfhttpparam type="header" name="Date" value="#dateTimeString#">
+			<cfhttpparam type="header" name="x-amz-acl" value="public-read">
+			<cfhttpparam type="body" value="#binaryFileData#">
+			<cfif arguments.cacheControl>
+				<cfhttpparam type="header" name="Cache-Control" value="max-age=2592000">
+				<cfhttpparam type="header" name="Expires" value="#DateFormat(now()+arguments.cacheDays,'ddd, dd mmm yyyy')# #TimeFormat(now(),'H:MM:SS')# GMT">
+			</cfif>
 		</cfhttp> 		
 		
 		<cfreturn true>

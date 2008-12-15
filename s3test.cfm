@@ -15,8 +15,9 @@
 	</cfif>
 	<cfset s3.putBucket(form.bucketName,form.acl,form.storage)>
 <cfelseif isDefined("form.uploadFile")>
+	<cfparam name="form.cacheControl" default="0">
 	<cffile action="upload" filefield="objectName" destination= "#ExpandPath('.')#" nameconflict="makeunique" mode="666">
-	<cfset result = s3.putObject(url.b,file.serverFile,file.contentType)>
+	<cfset result = s3.putObject(url.b,file.serverFile,file.contentType,'300',form.cacheControl)>
 	<cffile action="delete" file="#ExpandPath("./#file.serverFile#")#">
 <cfelseif isDefined("form.copy")>
 	<cfset result = s3.copyObject(url.b,url.co,form.newBucket,form.newFile)>
@@ -85,6 +86,8 @@
 	<form action="#cgi.script_name#?b=#url.b#" method="post" enctype="multipart/form-data">
 	<input type="file" name="objectName" size="30" />
 	<input type="submit" name="uploadFile" value="Upload File" />
+	<input type="checkbox" name="cacheControl" value="1" id="cc" />
+	<label for="cc">Cache Control</label>
 	</form>	
 	<a href="#cgi.script_name#">List All Buckets</a>
 	</cfoutput>	

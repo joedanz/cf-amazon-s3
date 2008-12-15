@@ -1,7 +1,7 @@
 README
-Amazon S3 REST Wrapper - Version 1.5
+Amazon S3 REST Wrapper - Version 1.7
 Joe Danziger (joe@ajaxcf.com)
-Released: June 13, 2008
+Released: December 15, 2008
 
 
 Install
@@ -24,10 +24,12 @@ Methods
      is optional and matches on the beginning of a key, marker is optional and results
      start from there, maxKeys is optional and restricts the number of objects returned)
  ** deleteBucket(bucketName) - delete a bucket (bucket must be empty).
- ** putObject(bucketName, fileKey, contentType, HTTPtimeout) - puts an object into a
-     bucket (HTTPtimeout is in seconds).
+ ** putObject(bucketName, fileKey, contentType, HTTPtimeout, cacheControl, cacheDays) - puts an object into a
+     bucket (HTTPtimeout is in seconds - default is 300; cacheControl tells browser to cache object - default is true; cacheDays default is 30).
  ** getObject(bucketName, fileKey, minutesValid) - get link to an object (minutesValid
      is optional and defaults to 60).
+ ** copyObject(oldBucketName, oldFileKey, newBucketName, newFileKey) - copies an object.
+ ** renameObject(oldBucketName, oldFileKey, newBucketName, newFileKey) - renames an object.
  ** deleteObject(bucketName, fileKey) - delete an object from a bucket.
 
  NOTE: You may also access your objects via:
@@ -46,7 +48,8 @@ Release History
  11/28/07 - v1.3 - integrated ACL & EU storage, better CF6 compatibility
  02/12/08 - v1.4 - now using Java's included HMAC_SHA1 function.
  06/13/08 - v1.5 - fixed getObject link with URLEncodedFormat().
- 12/11/08 - v1.6 - added copyObject and renameObject methods
+ 12/11/08 - v1.6 - added copyObject and renameObject methods.
+ 12/15/08 - v1.7 - added cacheControl and cacheDays to putObject.
 
 
 Thanks
@@ -56,3 +59,4 @@ Thanks to Steve Hicks for the bucket ACL updates (www.stevehicksonline.com).
 Thanks to Carlos Gallupa for the EU storage location updates (www.mximize.com).
 Thanks to Dmitry Yakhnov for info on Java's HMAC SHA-1 function.
 Thanks to Joel Greutman for the fix on the getObject link.
+Thanks to Jerad Sloan for the Cache Control headers.
