@@ -8,6 +8,7 @@
 <cfset s3 = createObject("component","s3").init(accessKeyId,secretAccessKey)>
 
 <cfparam name="url.b" default="">
+<cfparam name="url.versions" default="false">
 
 <cfif isDefined("form.createBucket")>
 	<cfif compare(url.b,'')>
@@ -17,7 +18,7 @@
 <cfelseif isDefined("form.uploadFile")>
 	<cfparam name="form.cacheControl" default="0">
 	<cffile action="upload" filefield="objectName" destination= "#ExpandPath('.')#" nameconflict="makeunique" mode="666">
-	<cfset result = s3.putObject(url.b,file.serverFile,file.contentType,'300',form.cacheControl)>
+	<cfset result = s3.putObject(url.b,file.serverFile,file.contentType,'300',form.cacheControl,'30',form.acl,form.storageClass)>
 	<cffile action="delete" file="#ExpandPath("./#file.serverFile#")#">
 <cfelseif isDefined("form.copy")>
 	<cfset result = s3.copyObject(url.b,url.co,form.newBucket,form.newFile)>
@@ -72,19 +73,44 @@
 		</form>
 		<a href="#cgi.script_name#?b=#url.b#">Back to &quot;#url.b#&quot; Bucket</a> // <a href="#cgi.script_name#">List All Buckets</a>
 	</cfoutput><cfelseif compare(url.b,'')>
-	<cfset allContents = s3.getBucket(url.b)>
+	<cfif url.versions>
+		<cfset allContents = s3.getBucket(bucketName=url.b,showVersions=true)>
+	<cfelse>
+		<cfset allContents = s3.getBucket(bucketName=url.b)>
+	</cfif>
 	<cfoutput>
 	<h1>Get Bucket</h1>
 	<table cellpadding="2" cellspacing="0" border="1">
 	<cfloop from="1" to="#arrayLen(allContents)#" index="i">
-	<tr><td>#allContents[i].Key#</td><td>#allContents[i].LastModified#</td><td>#NumberFormat(allContents[i].Size)#</td><td><a href="#cgi.script_name#?b=#URLEncodedFormat(url.b)#&vo=#URLEncodedFormat(allContents[i].Key)#">Get Link</a></td>
-	<td><a href="#cgi.script_name#?b=#URLEncodedFormat(url.b)#&co=#URLEncodedFormat(allContents[i].Key)#">Copy</a></td>
-	<td><a href="#cgi.script_name#?b=#URLEncodedFormat(url.b)#&ro=#URLEncodedFormat(allContents[i].Key)#">Rename</a></td>
-	<td><a href="#cgi.script_name#?b=#URLEncodedFormat(url.b)#&do=#URLEncodedFormat(allContents[i].Key)#">Delete</a></td></tr>
+	<tr>
+		<td>#allContents[i].Key#</td>
+		<td>#allContents[i].LastModified#</td>
+		<td>#NumberFormat(allContents[i].Size)#</td>
+		<cfif url.versions>
+			<td>#allContents[i].VersionID#</td>
+			<td>#allContents[i].IsLatest#</td>
+		</cfif>
+		<td><a href="#cgi.script_name#?b=#URLEncodedFormat(url.b)#&vo=#URLEncodedFormat(allContents[i].Key)#">Get Link</a></td>
+		<td><a href="#cgi.script_name#?b=#URLEncodedFormat(url.b)#&co=#URLEncodedFormat(allContents[i].Key)#">Copy</a></td>
+		<td><a href="#cgi.script_name#?b=#URLEncodedFormat(url.b)#&ro=#URLEncodedFormat(allContents[i].Key)#">Rename</a></td>
+		<td><a href="#cgi.script_name#?b=#URLEncodedFormat(url.b)#&do=#URLEncodedFormat(allContents[i].Key)#">Delete</a></td>
+	</tr>
 	</cfloop>
 	</table><br />
 	<form action="#cgi.script_name#?b=#url.b#" method="post" enctype="multipart/form-data">
 	<input type="file" name="objectName" size="30" />
+	<select name="acl">
+		<option value="private">Private</option>
+		<option value="public-read">Public-Read</option>
+		<option value="public-read-write">Public-Read-Write</option>
+		<option value="authenticated-read">Authenticated-Read</option>
+		<option value="bucket-owner-read">Bucket-Owner-Read</option>
+		<option value="bucket-owner-full-control">Bucket-Owner-Full-Control</option>
+	</select>
+	<select name="storageClass">
+		<option value="STANDARD">Standard</option>
+		<option value="REDUCED_REDUNDANCY">Reduced Redundancy</option>
+	</select>
 	<input type="submit" name="uploadFile" value="Upload File" />
 	<input type="checkbox" name="cacheControl" value="1" id="cc" />
 	<label for="cc">Cache Control</label>
@@ -96,9 +122,22 @@
 	<cfset allBuckets = s3.getBuckets()>
 	<cfoutput>
 	<h1>List All Buckets</h1>
+	
+	<cfif isDefined("url.cv")>
+		<cfset versioning = s3.getBucketVersioning(url.cv)>
+		Versioning for #url.cv#: #versioning#<br/><br/>
+	</cfif>
+	
 	<table cellpadding="2" cellspacing="0" border="1">
 	<cfloop from="1" to="#arrayLen(allBuckets)#" index="i">
-	<tr><td>#allBuckets[i].Name#</td><td>#allBuckets[i].CreationDate#</td><td><a href="#cgi.script_name#?b=#URLEncodedFormat(allBuckets[i].Name)#">View</a></td><td><a href="#cgi.script_name#?db=#URLEncodedFormat(allBuckets[i].Name)#">Delete</a></td></tr>
+	<tr>
+		<td>#allBuckets[i].Name#</td>
+		<td>#allBuckets[i].CreationDate#</td>
+		<td><a href="#cgi.script_name#?b=#URLEncodedFormat(allBuckets[i].Name)#">View</a></td>
+		<td><a href="#cgi.script_name#?b=#URLEncodedFormat(allBuckets[i].Name)#&amp;versions=true">View Versions</a></td>
+		<td><a href="#cgi.script_name#?db=#URLEncodedFormat(allBuckets[i].Name)#">Delete</a></td>
+		<td><a href="#cgi.script_name#?cv=#URLEncodedFormat(allBuckets[i].Name)#">Check Versioning</a></td>
+	</tr>
 	</cfloop>
 	</table><br />
 	<form action="#cgi.script_name#?b=#url.b#" method="post">
@@ -108,10 +147,14 @@
 		<option value="public-read">Public-Read</option>
 		<option value="public-read-write">Public-Read-Write</option>
 		<option value="authenticated-read">Authenticated-Read</option>
+		<option value="bucket-owner-read">Bucket-Owner-Read</option>
+		<option value="bucket-owner-full-control">Bucket-Owner-Full-Control</option>
 	</select>
 	<select name="storage">
-		<option value="US">United States</option>
-		<option value="EU">Europa</option>
+		<option value="">US Standard</option>
+		<option value="us-west-1">US West (N. California)</option>
+		<option value="EU">Europe (Ireland)</option>
+		<option value="ap-southeast-1">Asia Pacific (Singapore)</option>
 	</select>
 	<input type="submit" name="createBucket" value="Create Bucket" />
 	</form>

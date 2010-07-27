@@ -1,7 +1,7 @@
 README
-Amazon S3 REST Wrapper - Version 1.7
+Amazon S3 REST Wrapper - Version 1.8
 Joe Danziger (joe@ajaxcf.com)
-Released: December 15, 2008
+Released: July 27, 2010
 
 
 Install
@@ -20,12 +20,13 @@ Methods
  ** putBucket(bucketName, acl, storageLocation) - create a new bucket (acl is optional 
  	and	defaults to public-read, storageLocation is optional and defaults to non-EU.
  	Use 'EU' for the European location contraint).
- ** getBucket(bucketName, prefix, marker, maxKeys) - get contents of a bucket (prefix
-     is optional and matches on the beginning of a key, marker is optional and results
+ ** getBucket(bucketName, prefix, marker, maxKeys, showVersions) - get contents of a bucket 
+ 	(prefix is optional and matches on the beginning of a key, marker is optional and results
      start from there, maxKeys is optional and restricts the number of objects returned)
  ** deleteBucket(bucketName) - delete a bucket (bucket must be empty).
- ** putObject(bucketName, fileKey, contentType, HTTPtimeout, cacheControl, cacheDays) - puts an object into a
-     bucket (HTTPtimeout is in seconds - default is 300; cacheControl tells browser to cache object - default is true; cacheDays default is 30).
+ ** putObject(bucketName, fileKey, contentType, HTTPtimeout, cacheControl, cacheDays, acl, 
+ 	storageClass) - puts an object into a bucket (HTTPtimeout is in seconds - default is 300; 
+ 	cacheControl tells browser to cache object - default is true; cacheDays default is 30).
  ** getObject(bucketName, fileKey, minutesValid) - get link to an object (minutesValid
      is optional and defaults to 60).
  ** copyObject(oldBucketName, oldFileKey, newBucketName, newFileKey) - copies an object.
@@ -50,6 +51,7 @@ Release History
  06/13/08 - v1.5 - fixed getObject link with URLEncodedFormat().
  12/11/08 - v1.6 - added copyObject and renameObject methods.
  12/15/08 - v1.7 - added cacheControl and cacheDays to putObject.
+ 07/27/10 - v1.8 - added versioning, reduced redundancy, more acls.
 
 
 Thanks

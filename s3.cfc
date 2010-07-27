@@ -1,4 +1,4 @@
-<cfcomponent name="s3" displayname="Amazon S3 REST Wrapper v1.7">
+<cfcomponent name="s3" displayname="Amazon S3 REST Wrapper v1.8">
 
 <!---
 Amazon S3 REST Wrapper
@@ -11,7 +11,7 @@ Thanks to Carlos Gallupa for the EU storage location updates.
 Thanks to Joel Greutman for the fix on the getObject link.
 Thanks to Jerad Sloan for the Cache Control headers.
 
-Version 1.7 - Released: December 15, 2008
+Version 1.8 - Released: July 27, 2010
 --->
 
 	<cfset variables.accessKeyId = "">
@@ -102,6 +102,7 @@ Version 1.7 - Released: December 15, 2008
 		<cfargument name="acl" type="string" required="false" default="public-read">
 		<cfargument name="storageLocation" type="string" required="false" default="">
 		
+		<cfset var strXML = "">
 		<cfset var dateTimeString = GetHTTPTimeString(Now())>
 
 		<!--- Create a canonical string to send based on operation requested ---> 
@@ -110,9 +111,9 @@ Version 1.7 - Released: December 15, 2008
 		<!--- Create a proper signature --->
 		<cfset var signature = createSignature(cs)>
 
-		<cfif arguments.storageLocation eq "EU">
+		<cfif compare(arguments.storageLocation,'')>
 			<cfsavecontent variable="strXML">
-				<CreateBucketConfiguration><LocationConstraint>EU</LocationConstraint></CreateBucketConfiguration>
+				<CreateBucketConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><LocationConstraint>#arguments.storageLocation#</LocationConstraint></CreateBucketConfiguration>
 			</cfsavecontent>
 		<cfelse>
 			<cfset strXML = "">
@@ -124,7 +125,7 @@ Version 1.7 - Released: December 15, 2008
 			<cfhttpparam type="header" name="Date" value="#dateTimeString#">
 			<cfhttpparam type="header" name="x-amz-acl" value="#arguments.acl#">
 			<cfhttpparam type="header" name="Authorization" value="AWS #variables.accessKeyId#:#signature#">
-			<cfhttpparam type="body" value="#trim(variables.strXML)#">
+			<cfhttpparam type="body" value="#trim(strXML)#">
 		</cfhttp>
 		
 		<cfreturn true>
@@ -136,50 +137,105 @@ Version 1.7 - Released: December 15, 2008
 		<cfargument name="prefix" type="string" required="false" default="">
 		<cfargument name="marker" type="string" required="false" default="">
 		<cfargument name="maxKeys" type="string" required="false" default="">
+		<cfargument name="showVersions" type="boolean" required="false" default="false">
 		
+		<cfset var cs = "">
 		<cfset var data = "">
 		<cfset var content = "">
 		<cfset var contents = "">
+		<cfset var version = "">
+		<cfset var versions = "">
+		<cfset var signature = "">
+		<cfset var versioning = "">
+		<cfset var prefixString = "">
+		<cfset var markerString = "">
+		<cfset var maxKeysString = "">
 		<cfset var thisContent = "">
 		<cfset var allContents = "">
+		<cfset var thisVersion = "">
+		<cfset var allVersions = "">
 		<cfset var dateTimeString = GetHTTPTimeString(Now())>
+		
+		<!--- add proper versioning call if requested --->
+		<cfif arguments.showVersions>
+			<cfset versioning = "?versions">
+		</cfif>
 
 		<!--- Create a canonical string to send --->
-		<cfset var cs = "GET\n\n\n#dateTimeString#\n/#arguments.bucketName#">
+		<cfset cs = "GET\n\n\n#dateTimeString#\n/#arguments.bucketName##versioning#">
 
 		<!--- Create a proper signature --->
-		<cfset var signature = createSignature(cs)>
+		<cfset signature = createSignature(cs)>
 
 		<!--- get the bucket via REST --->
-		<cfhttp method="GET" url="http://s3.amazonaws.com/#arguments.bucketName#">
-			<cfhttpparam type="header" name="Date" value="#dateTimeString#">
-			<cfhttpparam type="header" name="Authorization" value="AWS #variables.accessKeyId#:#signature#">
+		<cfif arguments.showVersions>
 			<cfif compare(arguments.prefix,'')>
-				<cfhttpparam type="URL" name="prefix" value="#arguments.prefix#"> 
+				<cfset prefixString = "&prefix=#arguments.prefix#">
 			</cfif>
 			<cfif compare(arguments.marker,'')>
-				<cfhttpparam type="URL" name="marker" value="#arguments.marker#"> 
+				<cfset markerString = "&marker=#arguments.marker#">
 			</cfif>
 			<cfif isNumeric(arguments.maxKeys)>
-				<cfhttpparam type="URL" name="max-keys" value="#arguments.maxKeys#"> 
+				<cfset maxKeysString = "&max-keys=#arguments.maxKeys#">
 			</cfif>
-		</cfhttp>
+			<cfhttp method="GET" url="http://s3.amazonaws.com/#arguments.bucketName#?versions#prefixString##markerString##maxKeysString#">
+				<cfhttpparam type="header" name="Date" value="#dateTimeString#">
+				<cfhttpparam type="header" name="Authorization" value="AWS #variables.accessKeyId#:#signature#">
+			</cfhttp>		
+		<cfelse>
+			<cfhttp method="GET" url="http://s3.amazonaws.com/#arguments.bucketName#">
+				<cfhttpparam type="header" name="Date" value="#dateTimeString#">
+				<cfhttpparam type="header" name="Authorization" value="AWS #variables.accessKeyId#:#signature#">
+				<cfif compare(arguments.prefix,'')>
+					<cfhttpparam type="URL" name="prefix" value="#arguments.prefix#"> 
+				</cfif>
+				<cfif compare(arguments.marker,'')>
+					<cfhttpparam type="URL" name="marker" value="#arguments.marker#"> 
+				</cfif>
+				<cfif isNumeric(arguments.maxKeys)>
+					<cfhttpparam type="URL" name="max-keys" value="#arguments.maxKeys#"> 
+				</cfif>
+			</cfhttp>
+		</cfif>
 		
 		<cfset data = xmlParse(cfhttp.FileContent)>
-		<cfset contents = xmlSearch(data, "//:Contents")>
 
-		<!--- create array and insert values from XML --->
-		<cfset allContents = arrayNew(1)>
-		<cfloop index="x" from="1" to="#arrayLen(contents)#">
-			<cfset content = contents[x]>
-			<cfset thisContent = structNew()>
-			<cfset thisContent.Key = content.Key.xmlText>
-			<cfset thisContent.LastModified = content.LastModified.xmlText>
-			<cfset thisContent.Size = content.Size.xmlText>
-			<cfset arrayAppend(allContents, thisContent)>   
-		</cfloop>
+		<cfif arguments.showVersions>
+			<cfset versions = xmlSearch(data, "//:Version")>
+	
+			<!--- create array and insert values from XML --->
+			<cfset allVersions = arrayNew(1)>
+			<cfloop index="x" from="1" to="#arrayLen(versions)#">
+				<cfset version = versions[x]>
+				<cfset thisVersion = structNew()>
+				<cfset thisVersion.Key = version.Key.xmlText>
+				<cfset thisVersion.VersionID = version.VersionID.xmlText>
+				<cfset thisVersion.isLatest = version.IsLatest.xmlText>
+				<cfset thisVersion.LastModified = version.LastModified.xmlText>
+				<cfset thisVersion.Size = version.Size.xmlText>
+				<cfset thisVersion.StorageClass = version.StorageClass.xmlText>
+				<cfset arrayAppend(allVersions, thisVersion)>   
+			</cfloop>
+			
+			<cfreturn allVersions>	
+		<cfelse>
+			<cfset contents = xmlSearch(data, "//:Contents")>
+	
+			<!--- create array and insert values from XML --->
+			<cfset allContents = arrayNew(1)>
+			<cfloop index="x" from="1" to="#arrayLen(contents)#">
+				<cfset content = contents[x]>
+				<cfset thisContent = structNew()>
+				<cfset thisContent.Key = content.Key.xmlText>
+				<cfset thisContent.LastModified = content.LastModified.xmlText>
+				<cfset thisContent.Size = content.Size.xmlText>
+				<cfset thisContent.StorageClass = content.StorageClass.xmlText>
+				<cfset arrayAppend(allContents, thisContent)>   
+			</cfloop>
+			
+			<cfreturn allContents>
+		</cfif>
 
-		<cfreturn allContents>
 	</cffunction>
 	
 	<cffunction name="deleteBucket" access="public" output="false" returntype="boolean" 
@@ -203,7 +259,7 @@ Version 1.7 - Released: December 15, 2008
 		<cfreturn true>
 	</cffunction>
 	
-	<cffunction name="putObject" access="public" output="false" returntype="boolean" 
+	<cffunction name="putObject" access="public" output="false" returntype="string" 
 				description="Puts an object into a bucket.">
 		<cfargument name="bucketName" type="string" required="yes">
 		<cfargument name="fileKey" type="string" required="yes">
@@ -211,12 +267,15 @@ Version 1.7 - Released: December 15, 2008
 		<cfargument name="HTTPtimeout" type="numeric" required="no" default="300">
 		<cfargument name="cacheControl" type="boolean" required="false" default="true">
 		<cfargument name="cacheDays" type="numeric" required="false" default="30">
+		<cfargument name="acl" type="string" required="no" default="public-read">
+		<cfargument name="storageClass" type="string" required="no" default="STANDARD">
 		
+		<cfset var versionID = "">
 		<cfset var binaryFileData = "">
 		<cfset var dateTimeString = GetHTTPTimeString(Now())>
 
 		<!--- Create a canonical string to send --->
-		<cfset var cs = "PUT\n\n#arguments.contentType#\n#dateTimeString#\nx-amz-acl:public-read\n/#arguments.bucketName#/#arguments.fileKey#">
+		<cfset var cs = "PUT\n\n#arguments.contentType#\n#dateTimeString#\nx-amz-acl:#arguments.acl#\nx-amz-storage-class:#arguments.storageClass#\n/#arguments.bucketName#/#arguments.fileKey#">
 		
 		<!--- Create a proper signature --->
 		<cfset var signature = createSignature(cs)>
@@ -229,7 +288,8 @@ Version 1.7 - Released: December 15, 2008
 			<cfhttpparam type="header" name="Authorization" value="AWS #variables.accessKeyId#:#signature#">
 			<cfhttpparam type="header" name="Content-Type" value="#arguments.contentType#">
 			<cfhttpparam type="header" name="Date" value="#dateTimeString#">
-			<cfhttpparam type="header" name="x-amz-acl" value="public-read">
+			<cfhttpparam type="header" name="x-amz-acl" value="#arguments.acl#">
+			<cfhttpparam type="header" name="x-amz-storage-class" value="#arguments.storageClass#">
 			<cfhttpparam type="body" value="#binaryFileData#">
 			<cfif arguments.cacheControl>
 				<cfhttpparam type="header" name="Cache-Control" value="max-age=2592000">
@@ -237,7 +297,12 @@ Version 1.7 - Released: December 15, 2008
 			</cfif>
 		</cfhttp> 		
 		
-		<cfreturn true>
+		<cftry>
+			<cfset versionID = cfhttp.responseHeader['x-amz-version-id']>
+			<cfcatch></cfcatch>
+		</cftry>
+		
+		<cfreturn versionID>
 	</cffunction>
 
 	<cffunction name="getObject" access="public" output="false" returntype="string" 
@@ -328,6 +393,64 @@ Version 1.7 - Released: December 15, 2008
 		<cfelse>
 			<cfreturn false>
 		</cfif>
+	</cffunction>
+
+	<cffunction name="getBucketVersioning" access="public" output="false" returntype="string" 
+				description="Determines versioning setting for a bucket.">
+		<cfargument name="bucketName" type="string" required="yes">
+		
+		<cfset var data = "">
+		<cfset var result = "">
+		<cfset var dateTimeString = GetHTTPTimeString(Now())>
+
+		<!--- Create a canonical string to send --->
+		<cfset var cs = "GET\n\n\n#dateTimeString#\n/#arguments.bucketName#?versioning">
+
+		<!--- Create a proper signature --->
+		<cfset var signature = createSignature(cs)>
+
+		<!--- get the bucket via REST --->
+		<cfhttp method="GET" url="http://s3.amazonaws.com/#arguments.bucketName#?versioning">
+			<cfhttpparam type="header" name="Date" value="#dateTimeString#">
+			<cfhttpparam type="header" name="Authorization" value="AWS #variables.accessKeyId#:#signature#">
+		</cfhttp>
+		
+		<cfset data = xmlParse(cfhttp.FileContent)>
+		<cftry>
+			<cfset result = data.VersioningConfiguration.Status.xmlText>
+			<cfcatch><cfset result = "Disabled"></cfcatch>
+		</cftry>
+
+		<cfreturn result>
+	</cffunction>
+
+	<cffunction name="setBucketVersioning" access="public" output="false" returntype="boolean" 
+				description="Sets versioning on a bucket.">
+		<cfargument name="bucketName" type="string" required="true">
+		<cfargument name="versioning" type="string" required="false" default="Enabled">
+		
+		<cfset var strXML = "">
+		<cfset var dateTimeString = GetHTTPTimeString(Now())>
+
+		<!--- Create a canonical string to send based on operation requested ---> 
+		<cfset var cs = "PUT\n\ntext/html\n#dateTimeString#\n/#arguments.bucketName#?versioning">
+
+		<!--- Create a proper signature --->
+		<cfset var signature = createSignature(cs)>
+
+		<cfsavecontent variable="strXML">
+			<VersioningConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Status><cfoutput>#arguments.versioning#</cfoutput></Status></VersioningConfiguration>
+		</cfsavecontent>
+
+		<!--- put the bucket via REST --->
+		<cfhttp method="PUT" url="http://s3.amazonaws.com/#arguments.bucketName#?versioning" charset="utf-8">
+			<cfhttpparam type="header" name="Content-Type" value="text/html">
+			<cfhttpparam type="header" name="Date" value="#dateTimeString#">
+			<cfhttpparam type="header" name="Authorization" value="AWS #variables.accessKeyId#:#signature#">
+			<cfhttpparam type="body" value="#trim(strXML)#">
+		</cfhttp>
+		
+		<cfreturn true>
 	</cffunction>
 	
 </cfcomponent>
