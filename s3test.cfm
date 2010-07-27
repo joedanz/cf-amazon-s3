@@ -33,6 +33,10 @@
 <cfelseif isDefined("url.vo")>
 	<cfset timedLink = s3.getObject(url.b,url.vo)>
 	<cfoutput><a href="#timedLink#">#timedLink#</a></cfoutput>
+<cfelseif isDefined("url.von")>
+	<cfset s3.setBucketVersioning(url.cv,'Enabled')>
+<cfelseif isDefined("url.voff")>
+	<cfset s3.setBucketVersioning(url.cv,'Suspended')>
 </cfif>
 
 <cfif isDefined("url.co")>
@@ -125,7 +129,7 @@
 	
 	<cfif isDefined("url.cv")>
 		<cfset versioning = s3.getBucketVersioning(url.cv)>
-		Versioning for #url.cv#: #versioning#<br/><br/>
+		Versioning for #url.cv#: #versioning# (<cfif listFindNoCase('Disabled,Suspended',versioning)><a href="#cgi.script_name#?cv=#URLEncodedFormat(url.cv)#&amp;von=1">Enable</a><cfelse><a href="#cgi.script_name#?cv=#URLEncodedFormat(url.cv)#&amp;voff=1">Suspend</a></cfif>)<br/><br/>
 	</cfif>
 	
 	<table cellpadding="2" cellspacing="0" border="1">

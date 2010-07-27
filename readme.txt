@@ -32,6 +32,10 @@ Methods
  ** copyObject(oldBucketName, oldFileKey, newBucketName, newFileKey) - copies an object.
  ** renameObject(oldBucketName, oldFileKey, newBucketName, newFileKey) - renames an object.
  ** deleteObject(bucketName, fileKey) - delete an object from a bucket.
+ ** setBucketVersioning(bucketName,versioningStatus) - sets versioning on a bucket.  
+    Valid values are 'Enabled' and 'Suspended'
+ ** getBucketVersioning(bucketName) - gets current versioning status of bucket. 
+
 
  NOTE: You may also access your objects via:
        http://bucketname.s3.amazonaws.com/name-of-the-object
