@@ -1,7 +1,7 @@
 README
-Amazon S3 REST Wrapper - Version 1.8
+Amazon S3 REST Wrapper - Version 1.9
 Joe Danziger (joe@ajaxcf.com)
-Released: July 27, 2010
+Released: January 6, 2011
 
 
 Install
@@ -25,8 +25,10 @@ Methods
      start from there, maxKeys is optional and restricts the number of objects returned)
  ** deleteBucket(bucketName) - delete a bucket (bucket must be empty).
  ** putObject(bucketName, fileKey, contentType, HTTPtimeout, cacheControl, cacheDays, acl, 
- 	storageClass) - puts an object into a bucket (HTTPtimeout is in seconds - default is 300; 
- 	cacheControl tells browser to cache object - default is true; cacheDays default is 30).
+ 	storageClass, keyName, uploadDir) - puts an object into a bucket (HTTPtimeout is in 
+ 	seconds - default is 300; cacheControl tells browser to cache object - default is true; 
+ 	cacheDays default is 30; acl = access control list; storageClass = S3 Storage Class; 
+ 	keyName defaults to fileKey; uploadDir defaults to current directory).
  ** getObject(bucketName, fileKey, minutesValid) - get link to an object (minutesValid
      is optional and defaults to 60).
  ** copyObject(oldBucketName, oldFileKey, newBucketName, newFileKey) - copies an object.
@@ -40,9 +42,15 @@ Methods
  NOTE: You may also access your objects via:
        http://bucketname.s3.amazonaws.com/name-of-the-object
 
+
 Support
 -------
 You can email me at joe@ajaxcf.com and I'll do my best.
+
+
+Wishlist
+--------
+My Amazon Wishlist: http://amazon.com/gp/registry/wishlist/1X4EGLWAC43FJ/102-5824999-1765764
 
 
 Release History
@@ -56,6 +64,7 @@ Release History
  12/11/08 - v1.6 - added copyObject and renameObject methods.
  12/15/08 - v1.7 - added cacheControl and cacheDays to putObject.
  07/27/10 - v1.8 - added versioning, reduced redundancy, more acls.
+ 01/06/11 - v1.9 - added ability to use different key name and upload directory.
 
 
 Thanks

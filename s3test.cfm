@@ -1,8 +1,22 @@
 <cfset accessKeyId = "*** YOUR_ACCESS_KEY_ID ***"> 
 <cfset secretAccessKey = "*** YOUR_SECRET_ACCESS_KEY ***">
 
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+	<title>ColdFusion Amazon S3 Wrapper Test</title>
+	<style>
+		body { font-family:"Trebuchet MS", Arial, Helvetica; }
+		th { text-align:left; }
+		table { border-collapse:collapse; }
+		table, th, td { border: 1px solid #ccc; padding:3px; }
+	</style>
+</head>
+<body>
 <cfif find('***',accessKeyId) or find('***',secretAccessKey)>
-	<cfabort showerror="You must edit the code to enter YOUR accessKeyId and secretAccessKey at the top.">
+	<h1>You must enter your AWS credentials at top of script: <cfoutput>#cgi.script_name#</cfoutput></h1>
+	<cfabort>
 </cfif>
 
 <cfset s3 = createObject("component","s3").init(accessKeyId,secretAccessKey)>
@@ -17,9 +31,9 @@
 	<cfset s3.putBucket(form.bucketName,form.acl,form.storage)>
 <cfelseif isDefined("form.uploadFile")>
 	<cfparam name="form.cacheControl" default="0">
-	<cffile action="upload" filefield="objectName" destination= "#ExpandPath('.')#" nameconflict="makeunique" mode="666">
-	<cfset result = s3.putObject(url.b,file.serverFile,file.contentType,'300',form.cacheControl,'30',form.acl,form.storageClass)>
-	<cffile action="delete" file="#ExpandPath("./#file.serverFile#")#">
+	<cffile action="upload" filefield="objectName" destination="#GetTempDirectory()#" nameconflict="makeunique" mode="666">
+	<cfset result = s3.putObject(url.b,file.serverFile,file.contentType,'300',form.cacheControl,'30',form.acl,form.storageClass,form.keyName,GetTempDirectory())>
+	<cffile action="delete" file="#GetTempDirectory()##file.serverFile#">
 <cfelseif isDefined("form.copy")>
 	<cfset result = s3.copyObject(url.b,url.co,form.newBucket,form.newFile)>
 	<cflocation url="#cgi.script_name#?b=#form.newBucket#" addtoken="false">
@@ -76,7 +90,8 @@
 			</h2>
 		</form>
 		<a href="#cgi.script_name#?b=#url.b#">Back to &quot;#url.b#&quot; Bucket</a> // <a href="#cgi.script_name#">List All Buckets</a>
-	</cfoutput><cfelseif compare(url.b,'')>
+	</cfoutput>
+<cfelseif compare(url.b,'')>
 	<cfif url.versions>
 		<cfset allContents = s3.getBucket(bucketName=url.b,showVersions=true)>
 	<cfelse>
@@ -100,30 +115,56 @@
 		<td><a href="#cgi.script_name#?b=#URLEncodedFormat(url.b)#&do=#URLEncodedFormat(allContents[i].Key)#">Delete</a></td>
 	</tr>
 	</cfloop>
-	</table><br />
+	</table>
+	<cfif arrayLen(allContents)><br /></cfif>
 	<form action="#cgi.script_name#?b=#url.b#" method="post" enctype="multipart/form-data">
-	<input type="file" name="objectName" size="30" />
-	<select name="acl">
-		<option value="private">Private</option>
-		<option value="public-read">Public-Read</option>
-		<option value="public-read-write">Public-Read-Write</option>
-		<option value="authenticated-read">Authenticated-Read</option>
-		<option value="bucket-owner-read">Bucket-Owner-Read</option>
-		<option value="bucket-owner-full-control">Bucket-Owner-Full-Control</option>
-	</select>
-	<select name="storageClass">
-		<option value="STANDARD">Standard</option>
-		<option value="REDUCED_REDUNDANCY">Reduced Redundancy</option>
-	</select>
-	<input type="submit" name="uploadFile" value="Upload File" />
-	<input type="checkbox" name="cacheControl" value="1" id="cc" />
-	<label for="cc">Cache Control</label>
+	<table>
+		<tr>
+			<th>File To Upload</th>
+			<th>Key Name (optional)</th>
+			<th>ACL</th>
+			<th>Redundancy</th>
+			<th>Cache Control</th>
+			<th>Upload</th>
+		</tr>
+		<tr>
+			<td><input type="file" name="objectName" size="30" /></td>
+			<td><input type="text" name="keyName" size="30" /></td>
+			<td>
+				<select name="acl">
+					<option value="private">Private</option>
+					<option value="public-read">Public-Read</option>
+					<option value="public-read-write">Public-Read-Write</option>
+					<option value="authenticated-read">Authenticated-Read</option>
+					<option value="bucket-owner-read">Bucket-Owner-Read</option>
+					<option value="bucket-owner-full-control">Bucket-Owner-Full-Control</option>
+				</select>
+			</td>
+			<td>
+				<select name="storageClass">
+					<option value="STANDARD">Standard</option>
+					<option value="REDUCED_REDUNDANCY">Reduced Redundancy</option>
+				</select>			
+			</td>
+			<td>
+				<input type="checkbox" name="cacheControl" value="1" id="cc" />
+				<label for="cc">Cache Control</label>
+			</td>
+			<td><input type="submit" name="uploadFile" value="Upload File" /></td>
+		</tr>
+	</table>
 	</form>	
 	<a href="#cgi.script_name#">List All Buckets</a>
 	</cfoutput>	
 <cfelse>
 	<!--- get all buckets --->
-	<cfset allBuckets = s3.getBuckets()>
+	<cftry>
+		<cfset allBuckets = s3.getBuckets()>
+		<cfcatch>
+			<h1>Please check your AWS credentials at top of script: <cfoutput>#cgi.script_name#</cfoutput></h1>
+			<cfabort>
+		</cfcatch>
+	</cftry>
 	<cfoutput>
 	<h1>List All Buckets</h1>
 	
@@ -164,3 +205,5 @@
 	</form>
 	</cfoutput>
 </cfif>
+</body>
+</html>

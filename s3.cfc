@@ -12,6 +12,7 @@ Thanks to Joel Greutman for the fix on the getObject link.
 Thanks to Jerad Sloan for the Cache Control headers.
 
 Version 1.8 - Released: July 27, 2010
+Version 1.9 - Released: January 6, 2011
 --->
 
 	<cfset variables.accessKeyId = "">
@@ -269,22 +270,29 @@ Version 1.8 - Released: July 27, 2010
 		<cfargument name="cacheDays" type="numeric" required="false" default="30">
 		<cfargument name="acl" type="string" required="no" default="public-read">
 		<cfargument name="storageClass" type="string" required="no" default="STANDARD">
-		
+		<cfargument name="keyName" type="string" required="no" default="#arguments.fileKey#">
+		<cfargument name="uploadDir" type="string" required="no" default="#ExpandPath('./')#">
+				
 		<cfset var versionID = "">
 		<cfset var binaryFileData = "">
 		<cfset var dateTimeString = GetHTTPTimeString(Now())>
+		
+		<!--- if keyName submitted blank, use fileKey --->
+		<cfif not compare(arguments.keyName,'')>
+			<cfset arguments.keyName = arguments.fileKey>
+		</cfif>
 
 		<!--- Create a canonical string to send --->
-		<cfset var cs = "PUT\n\n#arguments.contentType#\n#dateTimeString#\nx-amz-acl:#arguments.acl#\nx-amz-storage-class:#arguments.storageClass#\n/#arguments.bucketName#/#arguments.fileKey#">
+		<cfset var cs = "PUT\n\n#arguments.contentType#\n#dateTimeString#\nx-amz-acl:#arguments.acl#\nx-amz-storage-class:#arguments.storageClass#\n/#arguments.bucketName#/#arguments.keyName#">
 		
 		<!--- Create a proper signature --->
 		<cfset var signature = createSignature(cs)>
 		
 		<!--- Read the image data into a variable --->
-		<cffile action="readBinary" file="#ExpandPath("./#arguments.fileKey#")#" variable="binaryFileData">
+		<cffile action="readBinary" file="#arguments.uploadDir##arguments.fileKey#" variable="binaryFileData">
 		
 		<!--- Send the file to amazon. The "X-amz-acl" controls the access properties of the file --->
-		<cfhttp method="PUT" url="http://s3.amazonaws.com/#arguments.bucketName#/#arguments.fileKey#" timeout="#arguments.HTTPtimeout#">
+		<cfhttp method="PUT" url="http://s3.amazonaws.com/#arguments.bucketName#/#arguments.keyName#" timeout="#arguments.HTTPtimeout#">
 			<cfhttpparam type="header" name="Authorization" value="AWS #variables.accessKeyId#:#signature#">
 			<cfhttpparam type="header" name="Content-Type" value="#arguments.contentType#">
 			<cfhttpparam type="header" name="Date" value="#dateTimeString#">
