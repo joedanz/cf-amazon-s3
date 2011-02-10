@@ -276,6 +276,8 @@ Version 1.9 - Released: January 6, 2011
 		<cfset var versionID = "">
 		<cfset var binaryFileData = "">
 		<cfset var dateTimeString = GetHTTPTimeString(Now())>
+		<cfset var cs = "">
+		<cfset var signature = "">
 		
 		<!--- if keyName submitted blank, use fileKey --->
 		<cfif not compare(arguments.keyName,'')>
@@ -283,10 +285,10 @@ Version 1.9 - Released: January 6, 2011
 		</cfif>
 
 		<!--- Create a canonical string to send --->
-		<cfset var cs = "PUT\n\n#arguments.contentType#\n#dateTimeString#\nx-amz-acl:#arguments.acl#\nx-amz-storage-class:#arguments.storageClass#\n/#arguments.bucketName#/#arguments.keyName#">
+		<cfset cs = "PUT\n\n#arguments.contentType#\n#dateTimeString#\nx-amz-acl:#arguments.acl#\nx-amz-storage-class:#arguments.storageClass#\n/#arguments.bucketName#/#arguments.keyName#">
 		
 		<!--- Create a proper signature --->
-		<cfset var signature = createSignature(cs)>
+		<cfset signature = createSignature(cs)>
 		
 		<!--- Read the image data into a variable --->
 		<cffile action="readBinary" file="#arguments.uploadDir##arguments.fileKey#" variable="binaryFileData">

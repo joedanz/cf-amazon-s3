@@ -1,7 +1,7 @@
 README
-Amazon S3 REST Wrapper - Version 1.9
+Amazon S3 REST Wrapper - Version 2.0
 Joe Danziger (joe@ajaxcf.com)
-Released: January 6, 2011
+Released: February 10, 2011
 
 
 Install
@@ -65,6 +65,7 @@ Release History
  12/15/08 - v1.7 - added cacheControl and cacheDays to putObject.
  07/27/10 - v1.8 - added versioning, reduced redundancy, more acls.
  01/06/11 - v1.9 - added ability to use different key name and upload directory.
+ 02/10/11 - v2.0 - fixed bug introduced in v1.9.
 
 
 Thanks
