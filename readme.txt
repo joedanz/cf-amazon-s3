@@ -1,7 +1,7 @@
 README
-Amazon S3 REST Wrapper - Version 2.0
+Amazon S3 REST Wrapper - Version 2.1
 Joe Danziger (joe@ajaxcf.com)
-Released: February 10, 2011
+Released: August 3, 2011
 
 
 Install
@@ -34,6 +34,7 @@ Methods
  ** copyObject(oldBucketName, oldFileKey, newBucketName, newFileKey) - copies an object.
  ** renameObject(oldBucketName, oldFileKey, newBucketName, newFileKey) - renames an object.
  ** deleteObject(bucketName, fileKey) - delete an object from a bucket.
+ ** objectExists(bucketName, fileKey) - determines if object exists in bucket.
  ** setBucketVersioning(bucketName,versioningStatus) - sets versioning on a bucket.  
     Valid values are 'Enabled' and 'Suspended'
  ** getBucketVersioning(bucketName) - gets current versioning status of bucket. 
@@ -66,6 +67,7 @@ Release History
  07/27/10 - v1.8 - added versioning, reduced redundancy, more acls.
  01/06/11 - v1.9 - added ability to use different key name and upload directory.
  02/10/11 - v2.0 - fixed bug introduced in v1.9.
+ 08/03/11 - v2.1 - added objectExists method to test if object is on S3.
 
 
 Thanks

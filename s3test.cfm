@@ -91,6 +91,17 @@
 		</form>
 		<a href="#cgi.script_name#?b=#url.b#">Back to &quot;#url.b#&quot; Bucket</a> // <a href="#cgi.script_name#">List All Buckets</a>
 	</cfoutput>
+<cfelseif isDefined("url.eo")>	
+	<cfset exists = s3.objectExists(url.b,url.eo)>
+	<cfoutput>
+		<h1>Check if Object Exists</h1>
+	
+		<h2>Bucket: #url.b#<br/>
+			Object: #url.eo#<br/>
+			Exists: #YesNoFormat(exists)#</h2>
+		
+		<a href="#cgi.script_name#?b=#url.b#">Back to &quot;#url.b#&quot; Bucket</a> // <a href="#cgi.script_name#">List All Buckets</a>		
+	</cfoutput>
 <cfelseif compare(url.b,'')>
 	<cfif url.versions>
 		<cfset allContents = s3.getBucket(bucketName=url.b,showVersions=true)>
@@ -110,6 +121,7 @@
 			<td>#allContents[i].IsLatest#</td>
 		</cfif>
 		<td><a href="#cgi.script_name#?b=#URLEncodedFormat(url.b)#&vo=#URLEncodedFormat(allContents[i].Key)#">Get Link</a></td>
+		<td><a href="#cgi.script_name#?b=#URLEncodedFormat(url.b)#&eo=#URLEncodedFormat(allContents[i].Key)#">Exists?</a></td>
 		<td><a href="#cgi.script_name#?b=#URLEncodedFormat(url.b)#&co=#URLEncodedFormat(allContents[i].Key)#">Copy</a></td>
 		<td><a href="#cgi.script_name#?b=#URLEncodedFormat(url.b)#&ro=#URLEncodedFormat(allContents[i].Key)#">Rename</a></td>
 		<td><a href="#cgi.script_name#?b=#URLEncodedFormat(url.b)#&do=#URLEncodedFormat(allContents[i].Key)#">Delete</a></td>

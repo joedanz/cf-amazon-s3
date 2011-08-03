@@ -404,6 +404,39 @@ Version 1.9 - Released: January 6, 2011
 			<cfreturn false>
 		</cfif>
 	</cffunction>
+	
+	<cffunction name="objectExists" access="public" output="false" returntype="boolean" 
+				description="Tests if object exists in bucket.">
+		<cfargument name="bucketName" type="string" required="yes">
+		<cfargument name="fileKey" type="string" required="yes">
+		
+		<cfset var dateTimeString = GetHTTPTimeString(Now())>
+		<cfset var result = "">
+		<cfset var found = 0>
+
+		<!--- Create a canonical string to send --->
+		<cfset cs = "HEAD\n\n\n#dateTimeString#\n/#arguments.bucketName#/#arguments.fileKey#">
+
+		<!--- Create a proper signature --->
+		<cfset var signature = createSignature(cs)>
+
+		<!--- HEAD the object via REST --->
+		<cfhttp method="HEAD" url="http://s3.amazonaws.com/#arguments.bucketName#/#arguments.fileKey#" result="result">
+			<cfhttpparam type="header" name="Date" value="#dateTimeString#">
+			<cfhttpparam type="header" name="Authorization" value="AWS #variables.accessKeyId#:#signature#">
+		</cfhttp>
+		
+		<cfswitch expression="#Left(result.statusCode,3)#">
+			<cfcase value="200">
+				<cfset found = 1>
+			</cfcase>
+			<cfcase value="404">
+				<cfset found = 0>
+			</cfcase>
+		</cfswitch>
+
+		<cfreturn found>
+	</cffunction>
 
 	<cffunction name="getBucketVersioning" access="public" output="false" returntype="string" 
 				description="Determines versioning setting for a bucket.">
